@@ -5,12 +5,12 @@ Description: This plugin allows you to searh github users. Use shortcode [github
 Version: 1.0.0
 */
 
-
 $tag = 'githubCode';
 
 add_shortcode( $tag , function(){
 	return showForm();
 });
+
 
 //ajax call
 add_action('wp_footer', 'get_github_users', 99); 
@@ -31,8 +31,14 @@ function get_github_users() {
 					if(response.total_count == 0){
 						jQuery('.user-doesnt-exist').removeClass('d-none');
 					}else if(response.total_count == 1){
+						
+						$login = response.items[0].login;
+						$html_url = response.items[0].html_url;
+						$email = response.items[0].html_url;
+
+						saveUserScript($login, $html_url, $email);
+
 						jQuery('.user-saved').removeClass('d-none');
-						//need to save user
 						console.log(response)
 					}else{
 						jQuery('.users-too-much').removeClass('d-none');
@@ -49,30 +55,43 @@ function get_github_users() {
 }
 //ajax call
 
-//add_action( 'plugins_loaded', 'saveUser');
-//save user from
-function saveUser(){
 
-	$user_email = 'dmytrotusdww11@gmail.com';
-	$user_name = 'dmytrotudwws11@gmail.com';
-	$random_password = wp_generate_password( 12 );
+//actions ajax request
+wp_enqueue_script( 'save_user_script', plugin_dir_url( __FILE__ ) . 'js/saveUser.js', array('jquery'));
+wp_localize_script('save_user_script', 'my_ajaxurl', array(
+	'ajaxurl' => admin_url('admin-ajax.php'),
+));
+add_action('wp_ajax_my_ajax_action', 'saveUser' );
+add_action('wp_ajax_nopriv_my_ajax_action', 'saveUser' );
+//actions ajax request
 
-	$user_id = wp_create_user( $user_name, $random_password, $user_email );
-	if ( is_wp_error( $user_id ) ) {
-		echo $user_id->get_error_message();
-	}
-	else {
-		return;
-	}
 
-	wp_insert_user( $userdata );
-	$userdata = array(
-		'ID'              => $user_id, 
-		'role'            => 'Contributor',
-		'html_url'		  => 'dfdsfd',
-	);
-}
 //save user
+function saveUser(){
+		$user_email = $_POST['email'] ;
+		$user_name =  $_POST['login'] ;
+		$random_password = wp_generate_password( 12 );
+
+		$user_id = wp_create_user( $user_name, $random_password, $user_email );
+		if ( is_wp_error( $user_id ) ) {
+			echo $user_id->get_error_message();
+		}
+		else {
+			echo 'User Saved';
+		}
+
+		wp_insert_user( $userdata );
+		$userdata = array(
+			'ID'              => $user_id, 
+			'role'            => 'Contributor' ,
+			'html_url'		  => $_POST['html_url'] ,
+		);
+
+		wp_die(); // required. to end AJAX request.
+
+};
+//save user
+
 
 function showForm(){
 	$form .= '<h3 class="text-center">Search github users</h3>';
