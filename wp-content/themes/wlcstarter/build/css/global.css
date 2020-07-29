@@ -1,0 +1,12 @@
+html,
+body {
+    min-height: 100vh;
+    background-color: #acacac;
+}
+
+
+.site-content {
+    flex: 1;
+}
+
+
